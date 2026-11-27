@@ -35,7 +35,11 @@ func eventsCmd() *cobra.Command {
 				return nil
 			}
 			for _, e := range list {
-				fmt.Fprintf(out, "%s  %-6s  %s\n", e.At.Local().Format("15:04:05"), e.Source, e.Type)
+				line := fmt.Sprintf("%s  %-6s  %s", e.At.Local().Format("15:04:05"), e.Source, e.Type)
+				if e.HumanSummary != "" {
+					line += "  \"" + e.HumanSummary + "\""
+				}
+				fmt.Fprintln(out, line)
 			}
 			return nil
 		},

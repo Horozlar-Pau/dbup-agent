@@ -1,6 +1,7 @@
 package events
 
 import (
+	"strings"
 	"testing"
 	"time"
 )
@@ -43,5 +44,19 @@ func TestRecentReturnsCopy(t *testing.T) {
 	got[0].Type = "changed"
 	if l.Recent(0)[0].Type != GitCommit {
 		t.Fatal("Recent must not expose internal slice")
+	}
+}
+
+func TestSummaryOnlyOnCommit(t *testing.T) {
+	now := time.Now()
+	if err := (Event{Type: GitCommit, At: now, HumanSummary: "Bir hatayı düzeltti."}).Validate(); err != nil {
+		t.Fatalf("commit with summary: %v", err)
+	}
+	if err := (Event{Type: PromptStarted, At: now, HumanSummary: "x"}).Validate(); err == nil {
+		t.Fatal("prompt event must not carry a summary")
+	}
+	long := Event{Type: GitCommit, At: now, HumanSummary: strings.Repeat("ş", MaxHumanSummary+1)}
+	if err := long.Validate(); err == nil {
+		t.Fatal("summary over the limit must be rejected")
 	}
 }

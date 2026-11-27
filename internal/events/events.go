@@ -1,13 +1,15 @@
 // Package events defines what the agent reports. Names match dbup-backend's api.md.
 //
-// An Event carries only its type, time and source: never prompt text, code,
-// file names or folder names (see docs/privacy.md).
+// An Event carries only its type, time and source, plus for git.commit an
+// optional ready-made summary sentence: never prompt text, commit messages,
+// code, file names or folder names (see docs/privacy.md).
 package events
 
 import (
 	"fmt"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 // Event types.
@@ -36,7 +38,12 @@ type Event struct {
 	Type   string    `json:"type"`
 	At     time.Time `json:"at"`
 	Source string    `json:"source"`
+	// HumanSummary is the "Ne Yapıyor Bu?" sentence, only for git.commit.
+	HumanSummary string `json:"humanSummary,omitempty"`
 }
+
+// MaxHumanSummary is the longest summary an event may carry.
+const MaxHumanSummary = 140
 
 // Validate reports whether e can be accepted.
 func (e Event) Validate() error {
@@ -45,6 +52,12 @@ func (e Event) Validate() error {
 	}
 	if e.At.IsZero() {
 		return fmt.Errorf("event %s has no time", e.Type)
+	}
+	if e.HumanSummary != "" && e.Type != GitCommit {
+		return fmt.Errorf("event %s cannot carry a summary", e.Type)
+	}
+	if utf8.RuneCountInString(e.HumanSummary) > MaxHumanSummary {
+		return fmt.Errorf("summary is longer than %d characters", MaxHumanSummary)
 	}
 	return nil
 }

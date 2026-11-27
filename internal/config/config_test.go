@@ -62,3 +62,30 @@ func TestLoadBadJSON(t *testing.T) {
 		t.Fatal("want error for malformed config")
 	}
 }
+
+func TestSummaryEnabledByDefault(t *testing.T) {
+	t.Setenv("DBUP_HOME", t.TempDir())
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.Summary.IsEnabled() {
+		t.Fatal("commit summary should be on by default")
+	}
+}
+
+func TestSummarySettingsAreRead(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("DBUP_HOME", dir)
+	body := `{"summary":{"enabled":false,"cliproxy_url":"http://127.0.0.1:9999","model":"m"}}`
+	if err := os.WriteFile(filepath.Join(dir, "config.json"), []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Summary.IsEnabled() || cfg.Summary.CLIProxyURL != "http://127.0.0.1:9999" || cfg.Summary.Model != "m" {
+		t.Fatalf("got %+v", cfg.Summary)
+	}
+}

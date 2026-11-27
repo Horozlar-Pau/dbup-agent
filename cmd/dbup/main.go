@@ -55,6 +55,11 @@ func statusCmd() *cobra.Command {
 			fmt.Fprintf(out, "backend: %s\n", st.BackendURL)
 			fmt.Fprintf(out, "token:   %s\n", token)
 			fmt.Fprintf(out, "events:  %d received\n", st.EventCount)
+			summary := "off"
+			if st.SummaryOn {
+				summary = "on (CLIProxy " + st.CLIProxyURL + ")"
+			}
+			fmt.Fprintf(out, "summary: %s\n", summary)
 			return nil
 		},
 	}

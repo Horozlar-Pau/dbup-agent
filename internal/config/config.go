@@ -18,6 +18,24 @@ type Config struct {
 	BackendURL string `json:"backend_url"`
 	// Token is the device token. Temporary: it will move to the macOS Keychain.
 	Token string `json:"token"`
+	// Summary controls the "Ne Yapıyor Bu?" commit sentence (docs/summary.md).
+	Summary Summary `json:"summary"`
+}
+
+// Summary holds the commit summary settings. The CLIProxy access key is not
+// here: it lives in the macOS Keychain.
+type Summary struct {
+	// Enabled is nil when unset; use IsEnabled.
+	Enabled *bool `json:"enabled,omitempty"`
+	// CLIProxyURL is CLIProxy's address. Empty means summary.DefaultURL.
+	CLIProxyURL string `json:"cliproxy_url,omitempty"`
+	// Model is the Claude model asked. Empty means summary.DefaultModel.
+	Model string `json:"model,omitempty"`
+}
+
+// IsEnabled reports whether commit summaries are on. They are on by default.
+func (s Summary) IsEnabled() bool {
+	return s.Enabled == nil || *s.Enabled
 }
 
 // Dir returns the dbup home directory: $DBUP_HOME, or ~/.dbup.

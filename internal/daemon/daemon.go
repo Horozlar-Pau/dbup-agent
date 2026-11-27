@@ -17,7 +17,7 @@ import (
 // Request types understood by dbupd.
 const (
 	TypeStatus = "status" // no data; answers Status
-	TypeEvent  = "event"  // data: events.Event; answers nothing
+	TypeEvent  = "event"  // data: EventRequest; answers nothing
 	TypeEvents = "events" // data: EventsQuery; answers []events.Event
 
 	TypeNudges       = "nudges"        // no data; answers inbox.Snapshot
@@ -47,6 +47,9 @@ type Status struct {
 	BackendURL    string    `json:"backend_url"`
 	TokenSet      bool      `json:"token_set"`
 	EventCount    int       `json:"event_count"`
+	// SummaryOn is true when commit summaries are on and CLIProxy is configured.
+	SummaryOn   bool   `json:"summary_on"`
+	CLIProxyURL string `json:"cliproxy_url,omitempty"`
 }
 
 // EventsQuery asks for the newest Limit events (0 = all kept).
@@ -69,6 +72,10 @@ type Daemon struct {
 	inbox     *inbox.Inbox
 	alerts    *inbox.Alerts
 	logf      func(format string, args ...any)
+
+	summarizer Summarizer
+	// async runs background work; tests replace it to run work inline.
+	async func(func())
 }
 
 // New creates a Daemon with the given settings.
@@ -81,6 +88,7 @@ func New(cfg config.Config) *Daemon {
 		inbox:     inbox.New(),
 		alerts:    inbox.NewAlerts(),
 		logf:      log.Printf,
+		async:     func(f func()) { go f() },
 	}
 }
 
@@ -136,16 +144,32 @@ func (d *Daemon) Handle(req ipc.Request) ipc.Response {
 }
 
 func (d *Daemon) addEvent(data json.RawMessage) ipc.Response {
-	var e events.Event
-	if err := json.Unmarshal(data, &e); err != nil {
+	var req EventRequest
+	if err := json.Unmarshal(data, &req); err != nil {
 		return ipc.ErrorResponse(fmt.Errorf("bad event: %w", err))
 	}
+	e := req.Event
+	// Only dbupd writes summaries, so the "commit özeti" setting cannot be bypassed.
+	e.HumanSummary = ""
 	if err := e.Validate(); err != nil {
 		return ipc.ErrorResponse(err)
 	}
-	d.events.Add(e)
-	d.logf("event %s from %s", e.Type, e.Source)
+	if d.wantsSummary(req) {
+		// The hook must not wait for CLIProxy: summarize in the background.
+		d.async(func() { d.store(d.withSummary(e, req.CommitSubject)) })
+		return ipc.Response{OK: true}
+	}
+	d.store(e)
 	return ipc.Response{OK: true}
+}
+
+func (d *Daemon) store(e events.Event) {
+	d.events.Add(e)
+	if e.HumanSummary != "" {
+		d.logf("event %s from %s (with summary)", e.Type, e.Source)
+		return
+	}
+	d.logf("event %s from %s", e.Type, e.Source)
 }
 
 func (d *Daemon) status() Status {
@@ -156,6 +180,8 @@ func (d *Daemon) status() Status {
 		BackendURL:    d.cfg.BackendURL,
 		TokenSet:      d.cfg.Token != "",
 		EventCount:    len(d.events.Recent(0)),
+		SummaryOn:     d.summarizer != nil,
+		CLIProxyURL:   d.cliproxyURL(),
 	}
 }
 
