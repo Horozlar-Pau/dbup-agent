@@ -43,8 +43,9 @@ function since(ms) {
 }
 
 class TrayMenu {
-  constructor({ onOpen, onQuit }) {
+  constructor({ onOpen, onCompose, onQuit }) {
     this.onOpen = onOpen;
+    this.onCompose = onCompose;
     this.onQuit = onQuit;
     this.mode = 'auto'; // auto | manual
     this.manual = 'available';
@@ -115,6 +116,7 @@ class TrayMenu {
       { label: 'Gizli mod', type: 'checkbox', checked: this.hidden, click: () => { this.hidden = !this.hidden; this.render(); } },
       { label: 'Bu repoyu takip etme', enabled: false, toolTip: 'Ayarlar > Takip dışı repolar' },
       { type: 'separator' },
+      { label: 'Mesaj gönder…', click: () => this.onCompose() },
       { label: "dbup'ı aç…", click: () => this.onOpen() },
       { label: 'Çık', click: () => this.onQuit() },
     ]));

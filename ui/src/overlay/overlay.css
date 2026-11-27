@@ -71,3 +71,22 @@ button { font: inherit; cursor: pointer; }
 .moral-note { font-size: 18px; font-weight: 700; }
 @keyframes pop { from { transform: translate(-50%, -50%) scale(.8); opacity: 0; } }
 @keyframes fade { 85% { opacity: 1; } 100% { opacity: 0; } }
+
+/* "Mesaj gönder" window */
+.compose-body { background: #f6f4f0; color: #1C1B19; margin: 0; font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.compose { display: flex; flex-direction: column; gap: 6px; padding: 20px 22px; }
+.compose h1 { font-size: 18px; margin: 0 0 8px; }
+.compose label { font-size: 12px; font-weight: 600; color: #5F5D57; margin-top: 6px; }
+.compose select, .compose textarea {
+  font: inherit; border: 1px solid #D9D6CF; border-radius: 10px; background: #fff; color: #1C1B19; padding: 8px 10px;
+}
+.compose textarea { resize: none; }
+.compose select:focus, .compose textarea:focus { outline: 2px solid #3a5bd9; outline-offset: 1px; }
+.compose-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 12px; color: #5F5D57; }
+.compose-foot button {
+  font: inherit; font-weight: 700; background: #1C1B19; color: #fff; border: 0; border-radius: 10px; padding: 9px 18px; min-height: 36px;
+}
+.compose-foot button:disabled { opacity: .4; }
+#status { min-height: 18px; margin: 4px 0 0; font-size: 13px; }
+#status.ok { color: #165E34; }
+#status.error { color: #B3261E; }

@@ -1,4 +1,4 @@
-// Wait card: a small corner card that shows queued nudges while Claude is working.
+// Wait card: a small corner card that shows nudges as soon as they arrive.
 // It never takes keyboard focus and makes no sound.
 'use strict';
 

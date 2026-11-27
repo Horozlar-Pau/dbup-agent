@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
+  <title>Mesaj gönder</title>
+  <link rel="stylesheet" href="overlay.css">
+</head>
+<body class="compose-body">
+  <form class="compose" id="form">
+    <h1>Mesaj gönder</h1>
+    <label for="to">Kime</label>
+    <select id="to" required><option value="">Yükleniyor…</option></select>
+    <label for="text">Mesaj</label>
+    <textarea id="text" maxlength="500" rows="5" placeholder="Bir şey yaz…" required></textarea>
+    <div class="compose-foot">
+      <span id="count">0 / 500</span>
+      <button type="submit" id="send" disabled>Gönder</button>
+    </div>
+    <p id="status" role="status" aria-live="polite"></p>
+  </form>
+  <script src="compose-view.js"></script>
+</body>
+</html>

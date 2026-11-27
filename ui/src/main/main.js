@@ -9,6 +9,7 @@ const { WaitCard } = require('./waitcard');
 const { TrayMenu } = require('./tray');
 const { Alerts } = require('./alerts');
 const { cardStep } = require('./watch');
+const { openCompose } = require('./compose');
 
 const WATCH_MS = 700;
 
@@ -43,6 +44,17 @@ function showMainWindow(page) {
 }
 
 let tray = null;
+
+// Like relay, with a longer timeout for calls that go on to the backend.
+function relayWith(type, timeoutMs) {
+  return async (_event, data) => {
+    try {
+      return { ok: true, data: await dbupd.send(type, data, { timeoutMs }) };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  };
+}
 
 // Each handler answers { ok, data } or { ok: false, error } so the page can show
 // "dbupd is not running" instead of throwing.
@@ -117,8 +129,10 @@ app.whenReady().then(() => {
   ipcMain.handle('dbupd:status', relay('status'));
   ipcMain.handle('dbupd:events', relay('events'));
   ipcMain.handle('dbupd:nudges', relay('nudges'));
+  ipcMain.handle('compose:circle', relayWith('circle', 15000));
+  ipcMain.handle('compose:send', relayWith('message.send', 15000));
   createWindow();
-  tray = new TrayMenu({ onOpen: showMainWindow, onQuit: () => app.quit() });
+  tray = new TrayMenu({ onOpen: showMainWindow, onCompose: openCompose, onQuit: () => app.quit() });
   setInterval(watch, WATCH_MS);
   app.on('activate', () => showMainWindow());
 });
