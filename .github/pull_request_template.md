@@ -9,3 +9,6 @@
 
 ## Notlar
 - 
+
+## Linear
+Fixes DBUP-
