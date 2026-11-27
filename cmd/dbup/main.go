@@ -25,7 +25,7 @@ func main() {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	root.AddCommand(statusCmd())
+	root.AddCommand(statusCmd(), hookCmd(), eventsCmd())
 
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "dbup:", err)
@@ -54,6 +54,7 @@ func statusCmd() *cobra.Command {
 			fmt.Fprintf(out, "dbupd:   running (%s, up %s)\n", st.Version, time.Duration(st.UptimeSeconds)*time.Second)
 			fmt.Fprintf(out, "backend: %s\n", st.BackendURL)
 			fmt.Fprintf(out, "token:   %s\n", token)
+			fmt.Fprintf(out, "events:  %d received\n", st.EventCount)
 			return nil
 		},
 	}

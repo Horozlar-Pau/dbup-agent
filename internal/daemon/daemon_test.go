@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Horozlar-Pau/dbup-agent/internal/config"
+	"github.com/Horozlar-Pau/dbup-agent/internal/events"
 	"github.com/Horozlar-Pau/dbup-agent/internal/ipc"
 )
 
@@ -39,5 +40,37 @@ func TestUnknownType(t *testing.T) {
 	resp := New(config.Config{}).Handle(ipc.Request{Type: "nope"})
 	if resp.OK {
 		t.Fatal("unknown request type should fail")
+	}
+}
+
+func TestEventIsStoredAndListed(t *testing.T) {
+	d := New(config.Config{})
+	d.logf = func(string, ...any) {}
+
+	data, _ := json.Marshal(events.Event{Type: events.GitCommit, At: time.Now(), Source: events.SourceGit})
+	if resp := d.Handle(ipc.Request{Type: TypeEvent, Data: data}); !resp.OK {
+		t.Fatalf("event rejected: %s", resp.Error)
+	}
+
+	resp := d.Handle(ipc.Request{Type: TypeEvents})
+	var list []events.Event
+	if err := json.Unmarshal(resp.Data, &list); err != nil {
+		t.Fatal(err)
+	}
+	if len(list) != 1 || list[0].Type != events.GitCommit {
+		t.Fatalf("got %+v", list)
+	}
+}
+
+func TestInvalidEventRejected(t *testing.T) {
+	d := New(config.Config{})
+	d.logf = func(string, ...any) {}
+
+	data, _ := json.Marshal(events.Event{Type: "made.up", At: time.Now()})
+	if resp := d.Handle(ipc.Request{Type: TypeEvent, Data: data}); resp.OK {
+		t.Fatal("invalid event accepted")
+	}
+	if resp := d.Handle(ipc.Request{Type: TypeEvent, Data: []byte("{")}); resp.OK {
+		t.Fatal("malformed event accepted")
 	}
 }

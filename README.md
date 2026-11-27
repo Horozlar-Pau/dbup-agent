@@ -21,3 +21,21 @@ Ayarlar `~/.dbup/config.json` dosyasından okunur (`DBUP_HOME` ile değiştirile
 ```json
 { "backend_url": "http://localhost:8080", "token": "" }
 ```
+
+## Hook'ları elle kurma
+`dbup setup` gelene kadar hook'lar elle eklenir. `dbup` komutunun PATH'te olması gerekir (ör. `bin/` klasörünü PATH'e ekleyin).
+
+**Claude Code:** `~/.claude/settings.json` içine:
+```json
+{
+  "hooks": {
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "dbup hook claude" }] }],
+    "Stop":             [{ "hooks": [{ "type": "command", "command": "dbup hook claude" }] }],
+    "SessionEnd":       [{ "hooks": [{ "type": "command", "command": "dbup hook claude" }] }]
+  }
+}
+```
+
+**Git:** takip edilecek repoda `.git/hooks/post-commit` dosyasına `dbup hook git-commit` satırını ekleyin ve dosyayı çalıştırılabilir yapın.
+
+Gelen olayları görmek için: `dbup events`. Hook hatalarını görmek için `DBUP_DEBUG=1`.
