@@ -76,6 +76,9 @@ npm test
 - `npm start` "Electron failed to install correctly" derse, indirilen arşivi elle açın:
   `rm -rf node_modules/electron/dist && ditto -x -k ~/Library/Caches/electron/*/electron-v*-darwin-arm64.zip node_modules/electron/dist && printf 'Electron.app/Contents/MacOS/Electron' > node_modules/electron/path.txt`
 
+## Mesaj gönderme
+Menü çubuğunda "dbup" → **Mesaj gönder…**, ya da **Cmd+Shift+M**, ya da Dock'taki ikona sağ tıklayıp **Mesaj gönder…**. Menü çubuğunda ikon görünmüyorsa: Sistem Ayarları → Menü Çubuğu'nda "Electron"a izin verin.
+
 ## Backend olmadan deneme
 Backend bağlanana kadar yakın çevre mesajları test komutlarıyla taklit edilir:
 

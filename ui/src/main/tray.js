@@ -58,6 +58,7 @@ class TrayMenu {
     this.key = '';
     this.tray = new Tray(dot(STATUS.available.color));
     this.tray.setToolTip('dbup');
+    this.tray.setTitle('dbup'); // a bare dot is easy to miss
     this.render();
     setInterval(() => this.render(), 30000); // keep "x dk'dır" fresh
   }

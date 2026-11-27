@@ -2,7 +2,7 @@
 // and drives the overlay windows (wait card, VIP alert, confetti) from what dbupd reports.
 'use strict';
 
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, globalShortcut } = require('electron');
 const path = require('node:path');
 const dbupd = require('./dbupd');
 const { WaitCard } = require('./waitcard');
@@ -12,6 +12,7 @@ const { cardStep, newestFirstSplit } = require('./watch');
 const { openCompose } = require('./compose');
 
 const WATCH_MS = 700;
+const COMPOSE_SHORTCUT = 'CommandOrControl+Shift+M';
 
 let mainWin = null;
 
@@ -136,9 +137,18 @@ app.whenReady().then(() => {
   ipcMain.handle('compose:send', relayWith('message.send', 15000));
   createWindow();
   tray = new TrayMenu({ onOpen: showMainWindow, onCompose: openCompose, onQuit: () => app.quit() });
+  // The menu bar icon can be hidden (notch, or macOS menu bar settings), so
+  // "Mesaj gönder" is also on a shortcut and on the Dock icon's menu.
+  if (!globalShortcut.register(COMPOSE_SHORTCUT, openCompose)) console.error(`shortcut ${COMPOSE_SHORTCUT} is taken`);
+  app.dock?.setMenu(Menu.buildFromTemplate([
+    { label: 'Mesaj gönder…', click: openCompose },
+    { label: "dbup'ı aç…", click: () => showMainWindow() },
+  ]));
   setInterval(watch, WATCH_MS);
   app.on('activate', () => showMainWindow());
 });
+
+app.on('will-quit', () => globalShortcut.unregisterAll());
 
 app.on('window-all-closed', () => {
   // Keep running in the menu bar; quit from its menu or with Cmd+Q.
