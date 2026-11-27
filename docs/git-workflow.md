@@ -5,6 +5,25 @@
 ## 0. Linear'da issue
 Her iş [Linear](https://linear.app/donotbreakup)'da **DBUP** takımında bir issue ile başlar (ör. `DBUP-12`). Issue yoksa önce issue açılır.
 
+Issue nasıl yazılır:
+
+| Alan | Kural |
+|---|---|
+| **Başlık** | `<Alan>: <ne yapılacak>`. Alan `Web`, `Agent` veya `Backend` olur. Birden fazla alan varsa `/` ile ayrılır: `Web/Backend: ...` |
+| **Etiket** | Alanla aynı: `web`, `agent`, `backend` (birden fazla olabilir) |
+| **Açıklama** | Madde madde, ne yapılacağı. Kısa ve sade; dosya yolu veya gereksiz teknik detay yok |
+
+Örnek:
+```
+Başlık:   Backend: Dürtme kuyruğunu ekle
+Etiket:   backend
+Açıklama:
+- Gelen dürtmeleri sıraya al
+- Yazılımcı odaktayken dürtmeleri beklet
+- Commit atılınca veya Claude yanıt üretmeye başlayınca bekleyenleri gönder
+- Gönderen kişiye "sırada" veya "iletildi" bilgisini göster
+```
+
 Linear, issue'yu branch ve PR'a numarasından bağlar ve durumunu kendisi ilerletir:
 
 | Ne olunca | Issue durumu |
