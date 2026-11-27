@@ -95,6 +95,7 @@ func setupBackend(ctx context.Context, d *daemon.Daemon, cfg config.Config) {
 		return
 	}
 	d.SetBackend(c)
+	d.SetMessenger(c)
 	go d.RunSender(ctx)
 	go func() {
 		err := c.Live(ctx, d.HandleLive, log.Printf)

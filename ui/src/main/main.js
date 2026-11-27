@@ -8,7 +8,8 @@ const dbupd = require('./dbupd');
 const { WaitCard } = require('./waitcard');
 const { TrayMenu } = require('./tray');
 const { Alerts } = require('./alerts');
-const { cardStep } = require('./watch');
+const { cardStep, newestFirstSplit } = require('./watch');
+const { openCompose } = require('./compose');
 
 const WATCH_MS = 700;
 
@@ -43,6 +44,17 @@ function showMainWindow(page) {
 }
 
 let tray = null;
+
+// Like relay, with a longer timeout for calls that go on to the backend.
+function relayWith(type, timeoutMs) {
+  return async (_event, data) => {
+    try {
+      return { ok: true, data: await dbupd.send(type, data, { timeoutMs }) };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  };
+}
 
 // Each handler answers { ok, data } or { ok: false, error } so the page can show
 // "dbupd is not running" instead of throwing.
@@ -101,8 +113,11 @@ async function watch() {
     ]);
     alerts.handle(pending || [], markSeen);
     const queued = inbox?.queued || [];
-    const step = cardStep(cardState, queued, card.open);
-    if (step === 'show') card.show([...queued].reverse()); // oldest first on the card
+    // Only the newest few stay on the card; older ones count as seen.
+    const { shown, stale } = newestFirstSplit(queued);
+    for (const n of stale) await dbupd.send('nudge.deliver', { id: n.id }).catch(() => {});
+    const step = cardStep(cardState, shown, card.open);
+    if (step === 'show') card.show(shown); // oldest first on the card
     if (step === 'close') await closeCard();
     tray?.update({ events, pending: queued.length, connected: true });
   } catch {
@@ -117,8 +132,10 @@ app.whenReady().then(() => {
   ipcMain.handle('dbupd:status', relay('status'));
   ipcMain.handle('dbupd:events', relay('events'));
   ipcMain.handle('dbupd:nudges', relay('nudges'));
+  ipcMain.handle('compose:circle', relayWith('circle', 15000));
+  ipcMain.handle('compose:send', relayWith('message.send', 15000));
   createWindow();
-  tray = new TrayMenu({ onOpen: showMainWindow, onQuit: () => app.quit() });
+  tray = new TrayMenu({ onOpen: showMainWindow, onCompose: openCompose, onQuit: () => app.quit() });
   setInterval(watch, WATCH_MS);
   app.on('activate', () => showMainWindow());
 });

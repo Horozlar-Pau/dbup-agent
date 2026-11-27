@@ -77,8 +77,9 @@ type Daemon struct {
 	// async runs background work; tests replace it to run work inline.
 	async func(func())
 
-	backend Backend
-	outbox  chan events.Event
+	backend   Backend
+	outbox    chan events.Event
+	messenger Messenger
 }
 
 // New creates a Daemon with the given settings.
@@ -149,6 +150,8 @@ func (d *Daemon) Handle(req ipc.Request) ipc.Response {
 			d.sendVIPSeen(al)
 		}
 		return result(al, err)
+	case TypeCircle, TypeMessageSend:
+		return d.handleMessages(req)
 	default:
 		return ipc.ErrorResponse(fmt.Errorf("unknown request type %q", req.Type))
 	}

@@ -25,4 +25,17 @@ function cardStep(state, queued, cardOpen) {
   return state.dismissed ? 'none' : 'show';
 }
 
-module.exports = { lastClaudeEvent, cardStep };
+/** Most nudges or cheers shown at once; older ones are dropped as seen. */
+const MAX_SHOWN = 4;
+
+/**
+ * Splits items (any order, numeric id) into the newest `max` to show, oldest
+ * first, and the older ones to drop.
+ */
+function newestFirstSplit(items, max = MAX_SHOWN) {
+  const byId = [...items].sort((a, b) => a.id - b.id);
+  const cut = Math.max(0, byId.length - max);
+  return { shown: byId.slice(cut), stale: byId.slice(0, cut) };
+}
+
+module.exports = { lastClaudeEvent, cardStep, newestFirstSplit, MAX_SHOWN };

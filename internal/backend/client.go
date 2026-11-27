@@ -166,3 +166,34 @@ func (c *Client) Reply(ctx context.Context, nudgeID, reply string) error {
 func (c *Client) VIPSeen(ctx context.Context, vipID string) error {
 	return c.do(ctx, http.MethodPost, "/v1/agent/vip/"+url.PathEscape(vipID)+"/seen", nil, nil)
 }
+
+// Member is one person in the close circle.
+type Member struct {
+	ID          string `json:"id"`
+	DisplayName string `json:"displayName"`
+	Username    string `json:"username"`
+	Disabled    bool   `json:"disabled"`
+}
+
+// Circle lists the close circle.
+func (c *Client) Circle(ctx context.Context) ([]Member, error) {
+	var list []Member
+	if err := c.do(ctx, http.MethodGet, "/v1/me/circle", nil, &list); err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
+// SentMessage is a message the backend stored.
+type SentMessage struct {
+	ID        string    `json:"id"`
+	Text      string    `json:"text"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+// SendMessage sends a message from the developer to one member.
+func (c *Client) SendMessage(ctx context.Context, memberID, text string) (SentMessage, error) {
+	var m SentMessage
+	err := c.do(ctx, http.MethodPost, "/v1/me/messages", map[string]string{"memberId": memberID, "text": text}, &m)
+	return m, err
+}
