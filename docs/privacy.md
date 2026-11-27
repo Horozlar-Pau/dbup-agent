@@ -5,7 +5,8 @@
 | Kod, dosya içerikleri | ❌ Asla |
 | Prompt metni | ❌ Asla. Yalnızca "fix/hata" içeriyor mu bilgisi bilgisayarda çıkarılır |
 | Dosya ve klasör adları | ❌ Hayır |
-| Commit mesajı | ⚙️ Yalnızca izin verilirse, kısaltılmış olarak ("Ne Yapıyor Bu?" çevirisi için) |
+| Commit mesajı | ❌ Backend'e gönderilmez. İzin verilirse yalnızca bilgisayardaki CLIProxy'ye gider ([summary.md](summary.md)) |
+| "Ne Yapıyor Bu?" cümlesi | ⚙️ Yalnızca izin verilirse, en fazla 140 karakter |
 | Olay türü ve zamanı | ✅ Evet (ör. "Claude çalışmaya başladı, 14:32") |
 | Repo adı | ⚙️ Varsayılan kapalı |
 
