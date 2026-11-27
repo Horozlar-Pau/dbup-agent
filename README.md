@@ -19,7 +19,7 @@ make run      # dbupd'yi başlatır
 Ayarlar `~/.dbup/config.json` dosyasından okunur (`DBUP_HOME` ile değiştirilebilir). Dosya yoksa varsayılanlar kullanılır:
 
 ```json
-{ "backend_url": "http://localhost:8080", "token": "" }
+{ "backend_url": "https://dbup.ardadagdeviren.com.tr", "token": "" }
 ```
 
 ## Hook'ları elle kurma
