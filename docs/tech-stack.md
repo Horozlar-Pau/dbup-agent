@@ -7,6 +7,7 @@
 | Backend bağlantısı | `coder/websocket` + HTTPS |
 | Yerel kuyruk | SQLite (`modernc.org/sqlite`, cgo gerektirmez) |
 | Token saklama | macOS Keychain (`zalando/go-keyring`) |
+| "Ne Yapıyor Bu?" | Yerelde çalışan CLIProxy üzerinden Claude (`anthropic-sdk-go`, `option.WithBaseURL`). Bkz. [summary.md](summary.md) |
 | Arayüz | Electron + TypeScript + React |
 | Servis ↔ arayüz | Unix soket üzerinden JSON mesajlar |
 | Dağıtım | Homebrew tap, `goreleaser`, `electron-builder` |
@@ -19,6 +20,7 @@ cmd/
   dbup/             → CLI (login, setup, hook, pause...)
 internal/
   sensors/          → Claude, git, odak, hata sinyali
+  summary/          → CLIProxy ile commit mesajını cümleye çevirme
   queue/            → çevrimdışı olay kuyruğu
   backend/          → backend istemcisi
   ipc/              → arayüzle Unix soket bağlantısı
