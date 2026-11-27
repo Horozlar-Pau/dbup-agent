@@ -17,7 +17,7 @@ func testCmd() *cobra.Command {
 		Use:   "test",
 		Short: "Send fake close-circle messages to dbupd (until the backend is connected)",
 	}
-	cmd.AddCommand(testNudgeCmd())
+	cmd.AddCommand(testNudgeCmd(), testAlertCmd(inbox.VIP), testAlertCmd(inbox.Moral))
 	return cmd
 }
 
@@ -47,5 +47,39 @@ func testNudgeCmd() *cobra.Command {
 	cmd.Flags().StringVar(&n.From, "from", "Elif", "sender's name")
 	cmd.Flags().StringVar(&n.Kind, "kind", "Kahve molası?", "nudge type, e.g. \"Müsait olunca ara\"")
 	cmd.Flags().StringVar(&n.Note, "note", "", "optional note")
+	return cmd
+}
+
+func testAlertCmd(kind string) *cobra.Command {
+	n := inbox.NewAlert{Kind: kind}
+	short, example, from, note := "Show a full-screen VIP alert with sound",
+		`  dbup test vip --from Elif --note "Kapıda kaldım, telefonu açar mısın?"`, "Elif", "Kapıda kaldım, anahtarı unuttum. Telefonu açar mısın?"
+	if kind == inbox.Moral {
+		short, example, from, note = "Show a short confetti with a cheering message",
+			`  dbup test moral --from Can --note "Kolay gelsin, sen yaparsın!"`, "Can", "Kolay gelsin, sen yaparsın!"
+	}
+	cmd := &cobra.Command{
+		Use:     kind,
+		Short:   short,
+		Example: example,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			data, err := json.Marshal(n)
+			if err != nil {
+				return err
+			}
+			resp, err := call(cmd.Context(), ipc.Request{Type: daemon.TypeAlertAdd, Data: data})
+			if err != nil {
+				return err
+			}
+			var got inbox.Alert
+			if err := json.Unmarshal(resp.Data, &got); err != nil {
+				return fmt.Errorf("read alert: %w", err)
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "sent %s #%d from %s\n", got.Kind, got.ID, got.From)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&n.From, "from", from, "sender's name")
+	cmd.Flags().StringVar(&n.Note, "note", note, "message")
 	return cmd
 }
