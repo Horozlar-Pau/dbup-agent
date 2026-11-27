@@ -6,6 +6,7 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('node:path');
 const dbupd = require('./dbupd');
 const { WaitCard } = require('./waitcard');
+const { TrayMenu } = require('./tray');
 const { cardStep } = require('./watch');
 
 const WATCH_MS = 700;
@@ -32,11 +33,15 @@ function createWindow() {
   mainWin.on('closed', () => { mainWin = null; });
 }
 
-function showMainWindow() {
+// Opens (or brings back) the management window, optionally on a page.
+function showMainWindow(page) {
   if (!mainWin) createWindow();
   else mainWin.show();
+  if (page) mainWin.webContents.executeJavaScript(`location.hash = ${JSON.stringify(page)}`).catch(() => {});
   app.focus({ steal: true });
 }
+
+let tray = null;
 
 // Each handler answers { ok, data } or { ok: false, error } so the page can show
 // "dbupd is not running" instead of throwing.
@@ -87,8 +92,10 @@ async function watch() {
     const step = cardStep(cardState, events || [], queued, card.open);
     if (step === 'show') card.show([...queued].reverse()); // oldest first on the card
     if (step === 'close') await closeCard();
+    tray?.update({ events, pending: queued.length, connected: true });
   } catch {
     // dbupd not running: leave the overlays as they are
+    tray?.update({ events: [], pending: 0, connected: false });
   } finally {
     watching = false;
   }
@@ -99,13 +106,14 @@ app.whenReady().then(() => {
   ipcMain.handle('dbupd:events', relay('events'));
   ipcMain.handle('dbupd:nudges', relay('nudges'));
   createWindow();
+  tray = new TrayMenu({ onOpen: showMainWindow, onQuit: () => app.quit() });
   setInterval(watch, WATCH_MS);
-  app.on('activate', showMainWindow);
+  app.on('activate', () => showMainWindow());
 });
 
 app.on('window-all-closed', () => {
-  // Keep running for the overlays; quit from the menu bar (DBUP-38) or Cmd+Q.
+  // Keep running in the menu bar; quit from its menu or with Cmd+Q.
   if (process.platform !== 'darwin') app.quit();
 });
 
-module.exports = { showMainWindow };
+module.exports = { showMainWindow, getTray: () => tray };
