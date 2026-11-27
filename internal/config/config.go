@@ -10,7 +10,7 @@ import (
 )
 
 // DefaultBackendURL is used when the config file does not set one.
-const DefaultBackendURL = "http://localhost:8080"
+const DefaultBackendURL = "https://dbup.ardadagdeviren.com.tr"
 
 // Config holds the settings shared by dbupd and the dbup CLI.
 type Config struct {
