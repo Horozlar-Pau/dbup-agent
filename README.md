@@ -40,6 +40,22 @@ Ayarlar `~/.dbup/config.json` dosyasından okunur (`DBUP_HOME` ile değiştirile
 
 Gelen olayları görmek için: `dbup events`. Hook hatalarını görmek için `DBUP_DEBUG=1`.
 
+## Commit özeti (CLIProxy)
+Commit atılınca `dbupd`, commit mesajının ilk satırını bilgisayardaki CLIProxy'ye gönderir ve gelen cümleyi `git.commit` olayına ekler ([docs/summary.md](docs/summary.md)). CLIProxy kapalıysa olay cümlesiz kaydedilir.
+
+```bash
+cli-proxy-api --claude-login                                    # CLIProxy'ye Claude hesabıyla giriş
+security add-generic-password -a dbup -s dbup-cliproxy -w        # CLIProxy erişim anahtarı (sorar)
+```
+
+Ayarlar `~/.dbup/config.json` içinde (hepsi isteğe bağlı):
+
+```json
+{ "summary": { "enabled": true, "cliproxy_url": "http://127.0.0.1:8317", "model": "claude-haiku-5-5" } }
+```
+
+Yalnızca bu bilgisayardaki adresler kabul edilir. Ayar değişince `dbupd` yeniden başlatılır. Durum için `dbup status`.
+
 ## Arayüz (Electron)
 Gereken: Node 20+
 
