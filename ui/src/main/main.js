@@ -1,13 +1,19 @@
-// Electron main process: opens the management window and relays dbupd data to it.
-// The UI decides nothing on its own; it only shows what dbupd reports.
+// Electron main process: opens the management window, relays dbupd data to it,
+// and drives the overlay windows (wait card) from what dbupd reports.
 'use strict';
 
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('node:path');
 const dbupd = require('./dbupd');
+const { WaitCard } = require('./waitcard');
+const { cardStep } = require('./watch');
+
+const WATCH_MS = 700;
+
+let mainWin = null;
 
 function createWindow() {
-  const win = new BrowserWindow({
+  mainWin = new BrowserWindow({
     width: 1120,
     height: 740,
     minWidth: 900,
@@ -22,7 +28,14 @@ function createWindow() {
       sandbox: true,
     },
   });
-  win.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
+  mainWin.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
+  mainWin.on('closed', () => { mainWin = null; });
+}
+
+function showMainWindow() {
+  if (!mainWin) createWindow();
+  else mainWin.show();
+  app.focus({ steal: true });
 }
 
 // Each handler answers { ok, data } or { ok: false, error } so the page can show
@@ -37,15 +50,62 @@ function relay(type) {
   };
 }
 
+// ---------- wait card ----------
+
+const cardState = { promptAt: null, dismissed: false };
+
+const card = new WaitCard({});
+
+async function closeCard() {
+  // Nudges the developer saw but did not answer count as delivered.
+  for (const n of card.close()) await dbupd.send('nudge.deliver', { id: n.id }).catch(() => {});
+}
+
+ipcMain.on('card:reply', async (_e, { id, reply }) => {
+  try {
+    await dbupd.send('nudge.reply', { id, reply });
+    card.replied(id, reply);
+  } catch (err) {
+    console.error('reply failed:', err.message);
+  }
+});
+ipcMain.on('card:dismiss', () => {
+  cardState.dismissed = true;
+  closeCard();
+});
+ipcMain.on('card:height', (_e, h) => card.fit(h));
+
+// ---------- watch dbupd ----------
+
+let watching = false;
+async function watch() {
+  if (watching) return;
+  watching = true;
+  try {
+    const [events, inbox] = await Promise.all([dbupd.send('events', { limit: 30 }), dbupd.send('nudges')]);
+    const queued = inbox?.queued || [];
+    const step = cardStep(cardState, events || [], queued, card.open);
+    if (step === 'show') card.show([...queued].reverse()); // oldest first on the card
+    if (step === 'close') await closeCard();
+  } catch {
+    // dbupd not running: leave the overlays as they are
+  } finally {
+    watching = false;
+  }
+}
+
 app.whenReady().then(() => {
   ipcMain.handle('dbupd:status', relay('status'));
   ipcMain.handle('dbupd:events', relay('events'));
+  ipcMain.handle('dbupd:nudges', relay('nudges'));
   createWindow();
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
+  setInterval(watch, WATCH_MS);
+  app.on('activate', showMainWindow);
 });
 
 app.on('window-all-closed', () => {
+  // Keep running for the overlays; quit from the menu bar (DBUP-38) or Cmd+Q.
   if (process.platform !== 'darwin') app.quit();
 });
+
+module.exports = { showMainWindow };

@@ -53,3 +53,12 @@ npm test
 - Pencere `dbupd`'ye Unix soketinden bağlanır. Teşhis sayfası ve Durum kartı gerçek olayları gösterir. Diğer sayfalar backend bağlanana kadar sahte verilerle (`ui/src/renderer/data.js`) çalışır.
 - `npm start` "Electron failed to install correctly" derse, indirilen arşivi elle açın:
   `rm -rf node_modules/electron/dist && ditto -x -k ~/Library/Caches/electron/*/electron-v*-darwin-arm64.zip node_modules/electron/dist && printf 'Electron.app/Contents/MacOS/Electron' > node_modules/electron/path.txt`
+
+## Backend olmadan deneme
+Backend bağlanana kadar yakın çevre mesajları test komutlarıyla taklit edilir:
+
+```bash
+./bin/dbup test nudge --from Elif --kind "Kahve molası?" --note "Bugün erken çıkabilir misin?"
+echo '{"hook_event_name":"UserPromptSubmit"}' | ./bin/dbup hook claude   # bekleme kartı açılır
+echo '{"hook_event_name":"Stop"}' | ./bin/dbup hook claude               # kart kapanır
+```

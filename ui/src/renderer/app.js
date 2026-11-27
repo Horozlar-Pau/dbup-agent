@@ -320,10 +320,23 @@ window.addEventListener('hashchange', () => go(location.hash.slice(1)));
 
 // ---------- dbupd polling ----------
 
+// Nudges from dbupd (sent with `dbup test nudge` until the backend is connected).
+function realNudges(snap) {
+  const short = (iso) => new Date(iso).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  const id = (name) => {
+    const key = name.toLocaleLowerCase('tr-TR');
+    const p = D.circle.find((c) => c.id === key || c.name.toLocaleLowerCase('tr-TR') === key);
+    return p ? p.id : name; // person() shows unknown senders by name in grey
+  };
+  const map = (n) => ({ from: id(n.from), kind: n.kind, note: n.note || '', reply: n.reply === '❤️' ? 'Kalp gönderdin' : n.reply || '', at: short(n.at), state: n.state });
+  return { queued: (snap.queued || []).map(map), history: (snap.history || []).map(map) };
+}
+
 async function poll() {
   if (!window.dbup) return; // opened outside Electron (plain browser preview)
-  const [st, ev] = await Promise.all([window.dbup.status(), window.dbup.events(50)]);
-  const before = JSON.stringify([state.daemon?.event_count, !!state.daemon]);
+  const [st, ev, nd] = await Promise.all([window.dbup.status(), window.dbup.events(50), window.dbup.nudges()]);
+  const before = JSON.stringify([state.daemon?.event_count, !!state.daemon, D.nudges]);
+  if (nd.ok && nd.data) D.nudges = realNudges(nd.data);
   state.daemon = st.ok ? st.data : null;
   state.daemonError = st.ok ? '' : st.error;
   state.events = ev.ok ? ev.data || [] : [];
@@ -337,7 +350,7 @@ async function poll() {
     state.lastEventAt = last.at;
   }
 
-  const after = JSON.stringify([state.daemon?.event_count, !!state.daemon]);
+  const after = JSON.stringify([state.daemon?.event_count, !!state.daemon, D.nudges]);
   // Re-render only when something changed and the user is not typing.
   if (before !== after && document.activeElement?.tagName !== 'INPUT') render();
   else renderSidebar();

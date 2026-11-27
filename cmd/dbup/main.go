@@ -25,7 +25,7 @@ func main() {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	root.AddCommand(statusCmd(), hookCmd(), eventsCmd())
+	root.AddCommand(statusCmd(), hookCmd(), eventsCmd(), testCmd())
 
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "dbup:", err)
