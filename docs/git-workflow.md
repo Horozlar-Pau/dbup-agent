@@ -40,7 +40,7 @@ Türler: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `ci`
 - Commit ve PR'larda AI/araç imzası (`Co-Authored-By`, "Generated with …") bulunmaz.
 
 ## 3. PR aç
-Başlık: `<tür>: <kısa açıklama> (DBUP-<no>)`, ör. `feat: add coffee nudge button (DBUP-12)`
+Başlık: `DBUP-<no>: <kısa açıklama>`, ör. `DBUP-12: add coffee nudge button`
 
 PR şablonu otomatik gelir. Sırasıyla doldurulur:
 
