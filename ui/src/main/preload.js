@@ -6,4 +6,5 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('dbup', {
   status: () => ipcRenderer.invoke('dbupd:status'),
   events: (limit = 50) => ipcRenderer.invoke('dbupd:events', { limit }),
+  nudges: () => ipcRenderer.invoke('dbupd:nudges'),
 });

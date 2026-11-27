@@ -9,6 +9,7 @@ import (
 
 	"github.com/Horozlar-Pau/dbup-agent/internal/config"
 	"github.com/Horozlar-Pau/dbup-agent/internal/events"
+	"github.com/Horozlar-Pau/dbup-agent/internal/inbox"
 	"github.com/Horozlar-Pau/dbup-agent/internal/ipc"
 	"github.com/Horozlar-Pau/dbup-agent/internal/version"
 )
@@ -18,6 +19,11 @@ const (
 	TypeStatus = "status" // no data; answers Status
 	TypeEvent  = "event"  // data: events.Event; answers nothing
 	TypeEvents = "events" // data: EventsQuery; answers []events.Event
+
+	TypeNudges       = "nudges"        // no data; answers inbox.Snapshot
+	TypeNudgeAdd     = "nudge.add"     // data: inbox.NewNudge; answers inbox.Nudge (test command for now)
+	TypeNudgeReply   = "nudge.reply"   // data: NudgeAction with Reply; answers inbox.Nudge
+	TypeNudgeDeliver = "nudge.deliver" // data: NudgeAction; answers inbox.Nudge
 )
 
 // recentEvents is how many events dbupd keeps in memory.
@@ -38,12 +44,19 @@ type EventsQuery struct {
 	Limit int `json:"limit"`
 }
 
+// NudgeAction points at one nudge, with the reply text for nudge.reply.
+type NudgeAction struct {
+	ID    int64  `json:"id"`
+	Reply string `json:"reply,omitempty"`
+}
+
 // Daemon keeps dbupd's state.
 type Daemon struct {
 	cfg       config.Config
 	startedAt time.Time
 	now       func() time.Time
 	events    *events.Log
+	inbox     *inbox.Inbox
 	logf      func(format string, args ...any)
 }
 
@@ -54,6 +67,7 @@ func New(cfg config.Config) *Daemon {
 		startedAt: time.Now(),
 		now:       time.Now,
 		events:    events.NewLog(recentEvents),
+		inbox:     inbox.New(),
 		logf:      log.Printf,
 	}
 }
@@ -73,6 +87,23 @@ func (d *Daemon) Handle(req ipc.Request) ipc.Response {
 			}
 		}
 		return ipc.OKResponse(d.events.Recent(q.Limit))
+	case TypeNudges:
+		return ipc.OKResponse(d.inbox.Snapshot())
+	case TypeNudgeAdd:
+		var n inbox.NewNudge
+		if err := json.Unmarshal(req.Data, &n); err != nil {
+			return ipc.ErrorResponse(fmt.Errorf("bad nudge: %w", err))
+		}
+		return result(d.inbox.Add(n))
+	case TypeNudgeReply, TypeNudgeDeliver:
+		var a NudgeAction
+		if err := json.Unmarshal(req.Data, &a); err != nil {
+			return ipc.ErrorResponse(fmt.Errorf("bad nudge action: %w", err))
+		}
+		if req.Type == TypeNudgeReply {
+			return result(d.inbox.Reply(a.ID, a.Reply))
+		}
+		return result(d.inbox.Deliver(a.ID))
 	default:
 		return ipc.ErrorResponse(fmt.Errorf("unknown request type %q", req.Type))
 	}
@@ -100,4 +131,11 @@ func (d *Daemon) status() Status {
 		TokenSet:      d.cfg.Token != "",
 		EventCount:    len(d.events.Recent(0)),
 	}
+}
+
+func result(v any, err error) ipc.Response {
+	if err != nil {
+		return ipc.ErrorResponse(err)
+	}
+	return ipc.OKResponse(v)
 }

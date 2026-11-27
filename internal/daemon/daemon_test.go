@@ -74,3 +74,22 @@ func TestInvalidEventRejected(t *testing.T) {
 		t.Fatal("malformed event accepted")
 	}
 }
+
+func TestNudgeFlow(t *testing.T) {
+	d := New(config.Config{})
+	resp := d.Handle(ipc.Request{Type: TypeNudgeAdd, Data: json.RawMessage(`{"from":"Elif","kind":"Kahve molası?"}`)})
+	if !resp.OK {
+		t.Fatalf("add: %s", resp.Error)
+	}
+	resp = d.Handle(ipc.Request{Type: TypeNudgeReply, Data: json.RawMessage(`{"id":1,"reply":"10 dk'ya ararım"}`)})
+	if !resp.OK {
+		t.Fatalf("reply: %s", resp.Error)
+	}
+	resp = d.Handle(ipc.Request{Type: TypeNudges})
+	if !strings.Contains(string(resp.Data), `"state":"replied"`) {
+		t.Fatalf("snapshot: %s", resp.Data)
+	}
+	if resp := d.Handle(ipc.Request{Type: TypeNudgeDeliver, Data: json.RawMessage(`{"id":1}`)}); resp.OK {
+		t.Fatal("handled nudge should not be delivered again")
+	}
+}
