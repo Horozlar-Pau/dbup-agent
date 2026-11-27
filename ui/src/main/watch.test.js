@@ -2,31 +2,28 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
-const { cardStep } = require('./watch');
+const { cardStep, lastClaudeEvent } = require('./watch');
 
-const ev = (type, at) => ({ type, at, source: type.startsWith('git') ? 'git' : 'claude' });
-const q = [{ id: 1 }];
-
-test('card opens while Claude works and nudges wait', () => {
+test('card opens as soon as a nudge arrives', () => {
   const s = {};
-  assert.equal(cardStep(s, [ev('ai.prompt_started', 't1')], q, false), 'show');
-  assert.equal(cardStep(s, [ev('ai.prompt_started', 't1')], [], false), 'none');
+  assert.equal(cardStep(s, [{ id: 1 }], false), 'show');
 });
 
-test('card closes when Claude finishes', () => {
+test('card closes when nothing is waiting', () => {
   const s = {};
-  assert.equal(cardStep(s, [ev('ai.prompt_started', 't1'), ev('ai.prompt_finished', 't2')], q, true), 'close');
+  assert.equal(cardStep(s, [], true), 'close');
+  assert.equal(cardStep(s, [], false), 'none');
 });
 
-test('git commits do not change whether Claude works', () => {
+test('a dismissed card stays closed until a new nudge arrives', () => {
   const s = {};
-  assert.equal(cardStep(s, [ev('ai.prompt_started', 't1'), ev('git.commit', 't2')], q, false), 'show');
-});
-
-test('a dismissed card stays closed until the next prompt', () => {
-  const s = {};
-  cardStep(s, [ev('ai.prompt_started', 't1')], q, false);
+  cardStep(s, [{ id: 1 }], false);
   s.dismissed = true;
-  assert.equal(cardStep(s, [ev('ai.prompt_started', 't1')], q, false), 'none');
-  assert.equal(cardStep(s, [ev('ai.prompt_started', 't3')], q, false), 'show');
+  assert.equal(cardStep(s, [{ id: 1 }], false), 'none');
+  assert.equal(cardStep(s, [{ id: 1 }, { id: 2 }], false), 'show');
+});
+
+test('lastClaudeEvent skips git events', () => {
+  const ev = [{ type: 'ai.prompt_started', at: 't1' }, { type: 'git.commit', at: 't2' }];
+  assert.equal(lastClaudeEvent(ev).type, 'ai.prompt_started');
 });

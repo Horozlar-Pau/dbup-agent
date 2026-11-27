@@ -58,7 +58,7 @@ function relay(type) {
 
 // ---------- wait card ----------
 
-const cardState = { promptAt: null, dismissed: false };
+const cardState = { lastId: null, dismissed: false };
 
 const card = new WaitCard({});
 
@@ -101,7 +101,7 @@ async function watch() {
     ]);
     alerts.handle(pending || [], markSeen);
     const queued = inbox?.queued || [];
-    const step = cardStep(cardState, events || [], queued, card.open);
+    const step = cardStep(cardState, queued, card.open);
     if (step === 'show') card.show([...queued].reverse()); // oldest first on the card
     if (step === 'close') await closeCard();
     tray?.update({ events, pending: queued.length, connected: true });
