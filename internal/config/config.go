@@ -16,7 +16,8 @@ const DefaultBackendURL = "https://dbup.ardadagdeviren.com.tr"
 type Config struct {
 	// BackendURL is the base address of dbup-backend.
 	BackendURL string `json:"backend_url"`
-	// Token is the device token. Temporary: it will move to the macOS Keychain.
+	// Token is the device token from `dbup pair`. config.json is saved 0600.
+	// Temporary: it will move to the macOS Keychain.
 	Token string `json:"token"`
 	// Summary controls the "Ne Yapıyor Bu?" commit sentence (docs/summary.md).
 	Summary Summary `json:"summary"`
@@ -101,4 +102,27 @@ func EnsureDir() (string, error) {
 		return "", fmt.Errorf("create %s: %w", d, err)
 	}
 	return d, nil
+}
+
+// Save writes cfg to config.json, readable only by the user (it holds the device token).
+func Save(cfg Config) error {
+	if _, err := EnsureDir(); err != nil {
+		return err
+	}
+	p, err := Path()
+	if err != nil {
+		return err
+	}
+	b, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return err
+	}
+	tmp := p + ".tmp"
+	if err := os.WriteFile(tmp, append(b, '\n'), 0o600); err != nil {
+		return fmt.Errorf("write config: %w", err)
+	}
+	if err := os.Rename(tmp, p); err != nil {
+		return fmt.Errorf("save config: %w", err)
+	}
+	return nil
 }

@@ -1,7 +1,7 @@
 // Package inbox keeps the nudges sent by the close circle until the developer sees them.
 //
-// For now nudges come from the `dbup test` command and replies stay on this
-// machine. DBUP-34 will fill the inbox from dbup-backend and send replies back.
+// Nudges come from dbup-backend (or the `dbup test` command). A nudge from the
+// backend carries its RemoteID so replies can be sent back and resends are ignored.
 package inbox
 
 import (
@@ -25,6 +25,7 @@ const maxHistory = 50
 // Nudge is one message from someone in the close circle.
 type Nudge struct {
 	ID        int64     `json:"id"`
+	RemoteID  string    `json:"remote_id,omitempty"`
 	From      string    `json:"from"`
 	Kind      string    `json:"kind"`
 	Note      string    `json:"note,omitempty"`
@@ -36,9 +37,10 @@ type Nudge struct {
 
 // NewNudge is the input for Add.
 type NewNudge struct {
-	From string `json:"from"`
-	Kind string `json:"kind"`
-	Note string `json:"note"`
+	From     string `json:"from"`
+	Kind     string `json:"kind"`
+	Note     string `json:"note"`
+	RemoteID string `json:"remote_id,omitempty"`
 }
 
 // Snapshot is the inbox content, newest first in both lists.
@@ -73,10 +75,28 @@ func (b *Inbox) Add(n NewNudge) (Nudge, error) {
 	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	nd := Nudge{ID: b.nextID, From: n.From, Kind: n.Kind, Note: strings.TrimSpace(n.Note), At: b.now(), State: Queued}
+	if old, ok := b.findRemote(n.RemoteID); ok {
+		return old, nil // the backend resends nudges after a reconnect
+	}
+	nd := Nudge{ID: b.nextID, RemoteID: n.RemoteID, From: n.From, Kind: n.Kind, Note: strings.TrimSpace(n.Note), At: b.now(), State: Queued}
 	b.nextID++
 	b.queued = append(b.queued, nd)
 	return nd, nil
+}
+
+// findRemote returns the nudge with this backend id. Caller holds mu.
+func (b *Inbox) findRemote(id string) (Nudge, bool) {
+	if id == "" {
+		return Nudge{}, false
+	}
+	for _, list := range [][]Nudge{b.queued, b.history} {
+		for _, n := range list {
+			if n.RemoteID == id {
+				return n, true
+			}
+		}
+	}
+	return Nudge{}, false
 }
 
 // Snapshot returns a copy of the inbox.

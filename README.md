@@ -22,6 +22,12 @@ Ayarlar `~/.dbup/config.json` dosyasından okunur (`DBUP_HOME` ile değiştirile
 { "backend_url": "https://dbup.ardadagdeviren.com.tr", "token": "" }
 ```
 
+## Sunucuya bağlama
+```bash
+./bin/dbup pair -u <kullanıcı-adı>   # şifre sorulur, cihaz token'ı config.json'a yazılır (0600)
+```
+Ardından `dbupd` yeniden başlatılır. Eşleşince `dbupd` olayları backend'e gönderir; dürtmeler, moral ve acil uyarılar canlı bağlantıyla gelir. Hızlı cevap ve "Gördüm" backend'e iletilir.
+
 ## Hook'ları elle kurma
 `dbup setup` gelene kadar hook'lar elle eklenir. `dbup` komutunun PATH'te olması gerekir (ör. `bin/` klasörünü PATH'e ekleyin).
 
@@ -81,4 +87,4 @@ echo '{"hook_event_name":"Stop"}' | ./bin/dbup hook claude               # kart 
 ./bin/dbup test moral --from Can --note "Kolay gelsin!"                     # konfeti
 ```
 
-Cevaplar ve "Gördüm" bilgisi şimdilik yalnızca dbupd'de (bellekte) tutulur. Backend bağlanınca (DBUP-34) gönderene iletilecek.
+Test komutlarıyla gelenlerin cevapları yalnızca dbupd'de kalır; backend'den gelenlerinki gönderene iletilir.
