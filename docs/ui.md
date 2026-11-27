@@ -1,5 +1,7 @@
 # Ekranda Ne Görünür?
 
+Ekran ekran ayrıntılı tasarım için: [ui-design.md](ui-design.md)
+
 ## 1. Menü çubuğu ikonu
 - Güncel durumu renkle gösterir: odak, AI ile çalışıyor, müsait, stresli.
 - Menüde: bekleyen dürtme sayısı, Gizli mod, ayarlar, çıkış.
