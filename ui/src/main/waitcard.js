@@ -7,6 +7,7 @@ const path = require('node:path');
 
 const WIDTH = 380;
 const MARGIN = 16;
+const MAX_ITEMS = 4; // older items leave the card
 
 class WaitCard {
   constructor({ onReply, onClose }) {
@@ -23,6 +24,8 @@ class WaitCard {
   // Adds nudges to the card and shows it without stealing focus.
   show(nudges) {
     for (const n of nudges) if (!this.items.has(n.id)) this.items.set(n.id, { ...n });
+    // Keep only the newest items (Map keeps insertion order, oldest first).
+    for (const id of [...this.items.keys()].slice(0, Math.max(0, this.items.size - MAX_ITEMS))) this.items.delete(id);
     if (!this.open) this.create();
     else this.push();
   }

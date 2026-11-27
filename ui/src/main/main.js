@@ -8,7 +8,7 @@ const dbupd = require('./dbupd');
 const { WaitCard } = require('./waitcard');
 const { TrayMenu } = require('./tray');
 const { Alerts } = require('./alerts');
-const { cardStep } = require('./watch');
+const { cardStep, newestFirstSplit } = require('./watch');
 const { openCompose } = require('./compose');
 
 const WATCH_MS = 700;
@@ -113,8 +113,11 @@ async function watch() {
     ]);
     alerts.handle(pending || [], markSeen);
     const queued = inbox?.queued || [];
-    const step = cardStep(cardState, queued, card.open);
-    if (step === 'show') card.show([...queued].reverse()); // oldest first on the card
+    // Only the newest few stay on the card; older ones count as seen.
+    const { shown, stale } = newestFirstSplit(queued);
+    for (const n of stale) await dbupd.send('nudge.deliver', { id: n.id }).catch(() => {});
+    const step = cardStep(cardState, shown, card.open);
+    if (step === 'show') card.show(shown); // oldest first on the card
     if (step === 'close') await closeCard();
     tray?.update({ events, pending: queued.length, connected: true });
   } catch {

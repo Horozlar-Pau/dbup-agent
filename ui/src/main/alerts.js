@@ -5,6 +5,7 @@ const { BrowserWindow, screen } = require('electron');
 const path = require('node:path');
 
 const MORAL_MS = 4500;
+const { newestFirstSplit } = require('./watch');
 
 function overlayWindow(opts) {
   const { bounds } = screen.getPrimaryDisplay();
@@ -44,6 +45,12 @@ class Alerts {
   // Shows new alerts one at a time per kind. onSeen(id, reply) is called when one is done.
   handle(pending, onSeen) {
     this.onSeen = onSeen;
+    // Only the newest few cheers are shown; older ones are marked seen and skipped.
+    const { stale } = newestFirstSplit(pending.filter((a) => a.kind === 'moral' && !this.shown.has(a.id)));
+    for (const a of stale) {
+      this.shown.add(a.id);
+      onSeen(a.id, '');
+    }
     for (const a of pending) {
       if (this.shown.has(a.id)) continue;
       if (a.kind === 'vip' && !this.vip) this.showVip(a);
