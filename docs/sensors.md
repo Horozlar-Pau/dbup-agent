@@ -5,7 +5,7 @@ Her kaynak bir olay üretir. Olay adları backend'deki [api.md](https://github.c
 | Kaynak | Nasıl | Ürettiği olay |
 |---|---|---|
 | **Claude Code** | Hook'lar `dbup hook <ad>` komutunu çağırır | `ai.prompt_started` (prompt gönderildi), `ai.prompt_finished` (yanıt bitti), `ai.session_ended` (oturum kapandı) |
-| **Git** | `post-commit` hook'u | `git.commit` |
+| **Git** | `post-commit` hook'u | `git.commit` (izin varsa "Ne Yapıyor Bu?" cümlesiyle, bkz. [summary.md](summary.md)) |
 | **Odak** | Editör veya terminal ön planda mı, klavye aktif mi | `coding.active`, `coding.idle` |
 | **Hata sinyali** | Art arda başarısız komutlar, "fix/hata" içeren promptlar | `error.signal` |
 
