@@ -39,3 +39,35 @@ button { font: inherit; cursor: pointer; }
 .wc-replies button:hover { background: #1C1B19; color: #fff; border-color: #1C1B19; }
 .wc-sent { margin: 8px 0 0 40px; font-size: 12px; font-weight: 600; color: #165E34; background: #DDF1E4; border-radius: 999px; padding: 3px 9px; display: inline-block; }
 .wc-foot { border-top: 1px solid #EFEDE8; padding-top: 8px; font-size: 11px; color: #5F5D57; text-align: center; }
+
+/* VIP alert */
+.vip-body { background: #5C120D; color: #fff; height: 100vh; display: flex; align-items: center; justify-content: center; }
+.vip { text-align: center; max-width: 640px; padding: 24px; display: flex; flex-direction: column; align-items: center; }
+.vip-tag {
+  font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  background: rgba(255,255,255,0.14); padding: 6px 14px; border-radius: 999px; margin-bottom: 28px;
+}
+.vip .avatar { font-size: 36px; box-shadow: 0 0 0 10px rgba(255,255,255,0.12); animation: ring 1.2s ease-in-out infinite; }
+@keyframes ring { 50% { box-shadow: 0 0 0 22px rgba(255,255,255,0.04); } }
+.vip h1 { font-size: 40px; line-height: 1.15; margin: 28px 0 12px; font-weight: 800; }
+.vip-note { font-size: 22px; margin: 0 0 14px; opacity: .95; }
+.vip-meta { font-size: 14px; opacity: .7; margin-bottom: 32px; }
+.vip-actions { display: flex; gap: 12px; }
+.vip-actions button { font-size: 16px; font-weight: 700; padding: 14px 26px; border-radius: 12px; min-height: 52px; }
+.vip-primary { background: #fff; color: #5C120D; border: 0; }
+.vip-secondary { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,0.6); }
+.vip-actions button:hover { filter: brightness(0.95); }
+.vip-foot { margin-top: 24px; font-size: 13px; opacity: .65; }
+
+/* Moral confetti */
+.moral-body { background: transparent; height: 100vh; overflow: hidden; }
+#confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+.moral-card {
+  position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: flex; gap: 14px; align-items: center; background: #fff; border-radius: 16px;
+  padding: 18px 24px; box-shadow: 0 12px 40px rgba(0,0,0,0.2); animation: pop .35s ease-out, fade 4.5s forwards;
+}
+.moral-from { font-size: 12px; color: #5F5D57; font-weight: 600; }
+.moral-note { font-size: 18px; font-weight: 700; }
+@keyframes pop { from { transform: translate(-50%, -50%) scale(.8); opacity: 0; } }
+@keyframes fade { 85% { opacity: 1; } 100% { opacity: 0; } }

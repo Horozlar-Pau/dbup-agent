@@ -24,7 +24,17 @@ const (
 	TypeNudgeAdd     = "nudge.add"     // data: inbox.NewNudge; answers inbox.Nudge (test command for now)
 	TypeNudgeReply   = "nudge.reply"   // data: NudgeAction with Reply; answers inbox.Nudge
 	TypeNudgeDeliver = "nudge.deliver" // data: NudgeAction; answers inbox.Nudge
+
+	TypeAlerts   = "alerts"    // no data; answers unseen []inbox.Alert
+	TypeAlertAdd = "alert.add" // data: inbox.NewAlert; answers inbox.Alert (test command for now)
+	TypeAlertAck = "alert.ack" // data: AlertAck; answers inbox.Alert
 )
+
+// AlertAck marks an alert as seen, with an optional quick reply.
+type AlertAck struct {
+	ID    int64  `json:"id"`
+	Reply string `json:"reply,omitempty"`
+}
 
 // recentEvents is how many events dbupd keeps in memory.
 const recentEvents = 200
@@ -57,6 +67,7 @@ type Daemon struct {
 	now       func() time.Time
 	events    *events.Log
 	inbox     *inbox.Inbox
+	alerts    *inbox.Alerts
 	logf      func(format string, args ...any)
 }
 
@@ -68,6 +79,7 @@ func New(cfg config.Config) *Daemon {
 		now:       time.Now,
 		events:    events.NewLog(recentEvents),
 		inbox:     inbox.New(),
+		alerts:    inbox.NewAlerts(),
 		logf:      log.Printf,
 	}
 }
@@ -104,6 +116,20 @@ func (d *Daemon) Handle(req ipc.Request) ipc.Response {
 			return result(d.inbox.Reply(a.ID, a.Reply))
 		}
 		return result(d.inbox.Deliver(a.ID))
+	case TypeAlerts:
+		return ipc.OKResponse(d.alerts.Pending())
+	case TypeAlertAdd:
+		var n inbox.NewAlert
+		if err := json.Unmarshal(req.Data, &n); err != nil {
+			return ipc.ErrorResponse(fmt.Errorf("bad alert: %w", err))
+		}
+		return result(d.alerts.Add(n))
+	case TypeAlertAck:
+		var a AlertAck
+		if err := json.Unmarshal(req.Data, &a); err != nil {
+			return ipc.ErrorResponse(fmt.Errorf("bad alert ack: %w", err))
+		}
+		return result(d.alerts.Ack(a.ID, a.Reply))
 	default:
 		return ipc.ErrorResponse(fmt.Errorf("unknown request type %q", req.Type))
 	}

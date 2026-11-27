@@ -1,5 +1,5 @@
 // Electron main process: opens the management window, relays dbupd data to it,
-// and drives the overlay windows (wait card) from what dbupd reports.
+// and drives the overlay windows (wait card, VIP alert, confetti) from what dbupd reports.
 'use strict';
 
 const { app, BrowserWindow, ipcMain } = require('electron');
@@ -7,6 +7,7 @@ const path = require('node:path');
 const dbupd = require('./dbupd');
 const { WaitCard } = require('./waitcard');
 const { TrayMenu } = require('./tray');
+const { Alerts } = require('./alerts');
 const { cardStep } = require('./watch');
 
 const WATCH_MS = 700;
@@ -80,6 +81,12 @@ ipcMain.on('card:dismiss', () => {
 });
 ipcMain.on('card:height', (_e, h) => card.fit(h));
 
+// ---------- VIP and moral alerts ----------
+
+const alerts = new Alerts();
+const markSeen = (id, reply) => dbupd.send('alert.ack', { id, reply }).catch((err) => console.error('ack failed:', err.message));
+ipcMain.on('alert:ack', (_e, { reply }) => alerts.ackVip(reply));
+
 // ---------- watch dbupd ----------
 
 let watching = false;
@@ -87,7 +94,12 @@ async function watch() {
   if (watching) return;
   watching = true;
   try {
-    const [events, inbox] = await Promise.all([dbupd.send('events', { limit: 30 }), dbupd.send('nudges')]);
+    const [events, inbox, pending] = await Promise.all([
+      dbupd.send('events', { limit: 30 }),
+      dbupd.send('nudges'),
+      dbupd.send('alerts'),
+    ]);
+    alerts.handle(pending || [], markSeen);
     const queued = inbox?.queued || [];
     const step = cardStep(cardState, events || [], queued, card.open);
     if (step === 'show') card.show([...queued].reverse()); // oldest first on the card
