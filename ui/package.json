@@ -1,0 +1,17 @@
+{
+  "name": "dbup-ui",
+  "version": "0.1.0",
+  "private": true,
+  "description": "dbup masaüstü arayüzü",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test \"src/**/*.test.js\""
+  },
+  "devDependencies": {
+    "electron": "^39.8.10"
+  },
+  "allowScripts": {
+    "electron@39.8.10": true
+  }
+}

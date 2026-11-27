@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+  <title>dbup</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="titlebar">dbup</div>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="me">
+        <div class="logo">db</div>
+        <div>
+          <div class="me-name">yazilimci</div>
+          <div class="me-status"><span class="dot" id="me-dot"></span><span id="me-status">AI ile çalışıyor</span></div>
+        </div>
+      </div>
+      <nav id="nav">
+        <a href="#durum" data-page="durum">Durum</a>
+        <a href="#yakin-cevre" data-page="yakin-cevre">Yakın çevre <span class="count" id="count-circle"></span></a>
+        <a href="#durtmeler" data-page="durtmeler">Dürtmeler <span class="count" id="count-nudges"></span></a>
+        <a href="#ayarlar" data-page="ayarlar">Ayarlar</a>
+        <a href="#teshis" data-page="teshis">Teşhis</a>
+      </nav>
+      <div class="conn">
+        <div><span class="dot" id="conn-dot"></span><b id="conn-label">dbupd kontrol ediliyor…</b></div>
+        <div class="muted" id="conn-host"></div>
+      </div>
+    </aside>
+    <main id="page"></main>
+  </div>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
