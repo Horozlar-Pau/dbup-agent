@@ -10,20 +10,19 @@ function lastClaudeEvent(events) {
 }
 
 /**
- * Decides what the wait card should do.
- * state: { promptAt, dismissed } carried between polls (mutated).
+ * Decides what the wait card should do. Nudges are shown as soon as they
+ * arrive, whether or not Claude is working (DBUP-44).
+ * state: { lastId, dismissed } carried between polls (mutated).
  * Returns 'show' | 'close' | 'none'.
  */
-function cardStep(state, events, queued, cardOpen) {
-  const last = lastClaudeEvent(events);
-  const working = last?.type === 'ai.prompt_started';
-  if (working && last.at !== state.promptAt) {
-    state.promptAt = last.at; // a new prompt: a closed card may open again
+function cardStep(state, queued, cardOpen) {
+  if (queued.length === 0) return cardOpen ? 'close' : 'none';
+  const newest = Math.max(...queued.map((n) => n.id));
+  if (newest !== state.lastId) {
+    state.lastId = newest; // a new nudge: a closed card opens again
     state.dismissed = false;
   }
-  if (!working) return cardOpen ? 'close' : 'none';
-  if (state.dismissed || queued.length === 0) return 'none';
-  return 'show';
+  return state.dismissed ? 'none' : 'show';
 }
 
 module.exports = { lastClaudeEvent, cardStep };

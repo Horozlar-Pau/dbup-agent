@@ -74,9 +74,7 @@ npm test
 Backend bağlanana kadar yakın çevre mesajları test komutlarıyla taklit edilir:
 
 ```bash
-./bin/dbup test nudge --from Elif --kind "Kahve molası?" --note "Bugün erken çıkabilir misin?"
-echo '{"hook_event_name":"UserPromptSubmit"}' | ./bin/dbup hook claude   # bekleme kartı açılır
-echo '{"hook_event_name":"Stop"}' | ./bin/dbup hook claude               # kart kapanır
+./bin/dbup test nudge --from Elif --kind "Kahve molası?" --note "Bugün erken çıkabilir misin?"   # kart hemen açılır
 ./bin/dbup test vip --from Elif --note "Kapıda kaldım, telefonu açar mısın?" # tam ekran, sesli
 ./bin/dbup test moral --from Can --note "Kolay gelsin!"                     # konfeti
 ```
