@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/Horozlar-Pau/dbup-agent/internal/backend"
 	"github.com/Horozlar-Pau/dbup-agent/internal/config"
 	"github.com/Horozlar-Pau/dbup-agent/internal/daemon"
 	"github.com/Horozlar-Pau/dbup-agent/internal/ipc"
@@ -33,8 +34,12 @@ func main() {
 		log.Fatal(err)
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	d := daemon.New(cfg)
 	setupSummary(d, cfg)
+	setupBackend(ctx, d, cfg)
 	srv, err := ipc.Listen(sock, d.Handle)
 	if err != nil {
 		log.Fatal(err)
@@ -45,6 +50,7 @@ func main() {
 	go func() {
 		<-stop
 		log.Print("shutting down")
+		cancel()
 		srv.Close()
 	}()
 
@@ -74,4 +80,27 @@ func setupSummary(d *daemon.Daemon, cfg config.Config) {
 		return
 	}
 	d.SetSummarizer(c)
+}
+
+// setupBackend connects to dbup-backend when this computer is paired: events
+// are sent in the background and nudges arrive over the live connection.
+func setupBackend(ctx context.Context, d *daemon.Daemon, cfg config.Config) {
+	if cfg.Token == "" {
+		log.Print("not paired with a backend (run `dbup pair`)")
+		return
+	}
+	c, err := backend.New(cfg.BackendURL, cfg.Token)
+	if err != nil {
+		log.Printf("backend off: %v", err)
+		return
+	}
+	d.SetBackend(c)
+	go d.RunSender(ctx)
+	go func() {
+		err := c.Live(ctx, d.HandleLive, log.Printf)
+		if errors.Is(err, backend.ErrUnauthorized) {
+			log.Print("backend rejected this device: run `dbup pair` again")
+		}
+	}()
+	log.Printf("connected to backend %s", cfg.BackendURL)
 }

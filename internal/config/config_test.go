@@ -89,3 +89,26 @@ func TestSummarySettingsAreRead(t *testing.T) {
 		t.Fatalf("got %+v", cfg.Summary)
 	}
 }
+
+func TestSaveKeepsSettingsAndHidesFile(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("DBUP_HOME", dir)
+	off := false
+	if err := Save(Config{BackendURL: "https://dbup.example.com", Token: "dbd_x", Summary: Summary{Enabled: &off}}); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Token != "dbd_x" || cfg.Summary.IsEnabled() {
+		t.Fatalf("got %+v", cfg)
+	}
+	fi, err := os.Stat(filepath.Join(dir, "config.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fi.Mode().Perm() != 0o600 {
+		t.Fatalf("config.json mode = %v, want 0600", fi.Mode().Perm())
+	}
+}

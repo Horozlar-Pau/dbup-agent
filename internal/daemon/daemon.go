@@ -76,6 +76,9 @@ type Daemon struct {
 	summarizer Summarizer
 	// async runs background work; tests replace it to run work inline.
 	async func(func())
+
+	backend Backend
+	outbox  chan events.Event
 }
 
 // New creates a Daemon with the given settings.
@@ -121,7 +124,11 @@ func (d *Daemon) Handle(req ipc.Request) ipc.Response {
 			return ipc.ErrorResponse(fmt.Errorf("bad nudge action: %w", err))
 		}
 		if req.Type == TypeNudgeReply {
-			return result(d.inbox.Reply(a.ID, a.Reply))
+			n, err := d.inbox.Reply(a.ID, a.Reply)
+			if err == nil {
+				d.sendReply(n)
+			}
+			return result(n, err)
 		}
 		return result(d.inbox.Deliver(a.ID))
 	case TypeAlerts:
@@ -137,7 +144,11 @@ func (d *Daemon) Handle(req ipc.Request) ipc.Response {
 		if err := json.Unmarshal(req.Data, &a); err != nil {
 			return ipc.ErrorResponse(fmt.Errorf("bad alert ack: %w", err))
 		}
-		return result(d.alerts.Ack(a.ID, a.Reply))
+		al, err := d.alerts.Ack(a.ID, a.Reply)
+		if err == nil {
+			d.sendVIPSeen(al)
+		}
+		return result(al, err)
 	default:
 		return ipc.ErrorResponse(fmt.Errorf("unknown request type %q", req.Type))
 	}
@@ -165,6 +176,7 @@ func (d *Daemon) addEvent(data json.RawMessage) ipc.Response {
 
 func (d *Daemon) store(e events.Event) {
 	d.events.Add(e)
+	d.enqueue(e)
 	if e.HumanSummary != "" {
 		d.logf("event %s from %s (with summary)", e.Type, e.Source)
 		return

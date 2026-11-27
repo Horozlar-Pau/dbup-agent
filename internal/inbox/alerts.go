@@ -19,21 +19,23 @@ const maxAlerts = 50
 
 // Alert is an urgent (VIP) or cheering (moral) message from the close circle.
 type Alert struct {
-	ID     int64     `json:"id"`
-	Kind   string    `json:"kind"`
-	From   string    `json:"from"`
-	Note   string    `json:"note,omitempty"`
-	At     time.Time `json:"at"`
-	Seen   bool      `json:"seen"`
-	SeenAt time.Time `json:"seen_at,omitzero"`
-	Reply  string    `json:"reply,omitempty"`
+	ID       int64     `json:"id"`
+	RemoteID string    `json:"remote_id,omitempty"`
+	Kind     string    `json:"kind"`
+	From     string    `json:"from"`
+	Note     string    `json:"note,omitempty"`
+	At       time.Time `json:"at"`
+	Seen     bool      `json:"seen"`
+	SeenAt   time.Time `json:"seen_at,omitzero"`
+	Reply    string    `json:"reply,omitempty"`
 }
 
 // NewAlert is the input for AddAlert.
 type NewAlert struct {
-	Kind string `json:"kind"`
-	From string `json:"from"`
-	Note string `json:"note"`
+	Kind     string `json:"kind"`
+	From     string `json:"from"`
+	Note     string `json:"note"`
+	RemoteID string `json:"remote_id,omitempty"`
 }
 
 // ErrAlertNotFound is returned for an unknown or already seen alert id.
@@ -63,7 +65,7 @@ func (a *Alerts) Add(n NewAlert) (Alert, error) {
 	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	al := Alert{ID: a.nextID, Kind: n.Kind, From: n.From, Note: strings.TrimSpace(n.Note), At: a.now()}
+	al := Alert{ID: a.nextID, RemoteID: n.RemoteID, Kind: n.Kind, From: n.From, Note: strings.TrimSpace(n.Note), At: a.now()}
 	a.nextID++
 	a.list = append(a.list, al)
 	if over := len(a.list) - maxAlerts; over > 0 {
@@ -86,7 +88,6 @@ func (a *Alerts) Pending() []Alert {
 }
 
 // Ack marks an alert as seen, with an optional quick reply.
-// The sender will see this once the backend is connected (DBUP-34).
 func (a *Alerts) Ack(id int64, reply string) (Alert, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()

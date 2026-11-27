@@ -56,3 +56,24 @@ func TestHistoryIsCapped(t *testing.T) {
 		t.Fatalf("history len %d", got)
 	}
 }
+
+func TestAddIgnoresResentRemoteNudge(t *testing.T) {
+	b := New()
+	first, err := b.Add(NewNudge{From: "Elif", Kind: "Kahve molası?", RemoteID: "abc"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	again, err := b.Add(NewNudge{From: "Elif", Kind: "Kahve molası?", RemoteID: "abc"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if again.ID != first.ID || len(b.Snapshot().Queued) != 1 {
+		t.Fatalf("resent nudge was added twice: %+v", b.Snapshot())
+	}
+	if _, err := b.Reply(first.ID, "Geliyorum"); err != nil {
+		t.Fatal(err)
+	}
+	if n, _ := b.Add(NewNudge{From: "Elif", Kind: "Kahve molası?", RemoteID: "abc"}); n.State != Replied {
+		t.Fatalf("answered nudge came back as %q", n.State)
+	}
+}
